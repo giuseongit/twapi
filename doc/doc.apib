@@ -1,0 +1,288 @@
+FORMAT: 1A
+
+# Twitter-like API
+
+Api for the coding challenge
+
+# Group User account handling
+
+Resources related to the handling of user accounts (no authentication token required)
+
+## Registering users [/register]
+
+### Register [POST]
+
+This url registers a user, it takes a JSON object containing all the data relative to the user
+
++ Request (application/json)
+
+    + Attributes
+
+        + username: jsmith (string, required)
+        + name: John (string, required)
+        + surname: Smith (string, required)
+        + email: jsmith@example.com (string, required)
+        + password: j0hnSm1th (string, required)
+
+
++ Response 200 (application/json) 
+        
+    This response means that the registration was successful.  
+
+    + Body
+
+            {
+                "status": "OK"
+            }
+
++ Response 200 (application/json) 
+        
+    As usernames and email address are **UNIQUE** keys on the database, if there's already a user with the specified username or email this response is given.
+
+    + Body
+    
+            {
+                "status": "Error, given email already exist!"
+            }
+
+## Authentication [/login]
+
+### Loggin in [POST]
+
+This url logs the user in
+
++ Request (application/json)
+
+    + Attributes
+
+        + username: jsmith (string, required)
+        + password: j0hnSm1th (string, required)
+
+
++ Response 200 (application/json) 
+        
+    This response means that the login was successful. An authentication token will be inside "message" field.
+
+    + Body
+
+            {
+                "status" : "OK"
+                "message": "{ authentication token }"
+            }
+
++ Response 200 (application/json) 
+        
+    If incorrect crententials are given the status will be "WRONG_CREDENTIALS" and the "message" field will be null
+
+    + Body
+    
+            {
+                "status" : "WRONG_CREDENTIALS"
+                "message": null
+            }
+
+# Group User interaction
+
+## Following users [/follow]
+
+### Follow a user [POST]
+
+This url permits to follow a user
+
++ Request (application/json)
+    
+    The username is the one of the user **to follow**.
+
+    + Attributes
+
+        + token: { auth token } (string, required)
+        + username: jsmith (string, required)
+
+
++ Response 200 (application/json) 
+        
+    This response means that the action was successful.  
+
+    + Body
+
+            {
+                "status": "OK"
+            }
+
++ Response 401 (application/json) 
+        
+    All user interaction and tweet interaction requires the auth token to perform actions
+
+    + Body
+    
+            {
+                "status": "AUTHENTICATION_REQUIRED"
+            }
+
+## Unfollowing users [/unfollow]
+
+### Unfollow a user [POST]
+
+This url permits to unfollow a user
+
++ Request (application/json)
+    
+    The username is the one of the user **to unfollow**.
+
+    + Attributes
+
+        + token: { auth token } (string, required)
+        + username: jsmith (string, required)
+
+
++ Response 200 (application/json) 
+        
+    This response means that the action was successful.  
+
+    + Body
+
+            {
+                "status": "OK"
+            }
+
+## Get the followers of a user [/followers]
+
+### Get Followers [POST]
+
+This url permits to get all the followers of the specified user
+
++ Request (application/json)
+    
+    If username is not provided, followers of the authenticated user will be shown.
+
+    + Attributes
+
+        + token: { auth token } (string, required)
+        + username: jsmith (string)
+
+
++ Response 200 (application/json) 
+
+    + Body
+
+            {
+              "status": "OK",
+              "list": [
+                {
+                  "username": "fpage01",
+                  "name": "Frank Page"
+                },
+                {
+                  "username": "dave",
+                  "name": "David Smith"
+                }
+              ]
+            }
+
+## Get the users followed by the specified one [/following]
+
+### Get Following [POST]
+
+This url permits to get all the users that follow the specified user
+
++ Request (application/json)
+    
+    If username is not provided, followers of the authenticated user will be shown.
+
+    + Attributes
+
+        + token: { auth token } (string, required)
+        + username: jsmith (string)
+
+
++ Response 200 (application/json) 
+
+    + Body
+
+            {
+              "status": "OK",
+              "list": [
+                {
+                  "username": "fpage01",
+                  "name": "Frank Page"
+                },
+                {
+                  "username": "dave",
+                  "name": "David Smith"
+                }
+              ]
+            }
+
+# Group Tweet actions
+
+## Post a tweet [/tweet]
+
+### Tweet [POST]
+
+This url permits to post a tweet
+
++ Request (application/json)
+
+    + Attributes
+
+        + token: { auth token } (string, required)
+        + tweet: Hi, i'm tweeting! (string, required)
+
+
++ Response 200 (application/json) 
+
+    + Body
+
+            {
+              "status": "OK"
+            }
+
+## Get tweet list [/get-tweets]
+
+### Get Tweets [POST]
+
+This url permits to get a list tweets
+
++ Request (application/json)
+
+    The search field (optional) takes a keyword used for search in the tweets list
+
+    + Attributes
+
+        + token: { auth token } (string, required)
+        + search: keyword (string)
+
+
++ Response 200 (application/json) 
+
+    + Body
+
+            {
+              "status": "OK",
+              "list": [
+                {
+                  "name": "Frank Page",
+                  "username": "fpage01",
+                  "date": "2016-04-04 15:36:08.0",
+                  "text": "This is a test message"
+                },
+                {
+                  "name": "David Smith",
+                  "username": "dave",
+                  "date": "2016-04-03 12:29:01.0",
+                  "text": "abcd"
+                },
+                {
+                  "name": "Frank Page",
+                  "username": "fpage01",
+                  "date": "2016-04-03 12:28:49.0",
+                  "text": "Hi, i'm tweeting!"
+                },
+                {
+                  "name": "David Smith",
+                  "username": "dave",
+                  "date": "2016-04-03 12:26:09.0",
+                  "text": "Lorem ipsum"
+                }
+              ]
+            }
