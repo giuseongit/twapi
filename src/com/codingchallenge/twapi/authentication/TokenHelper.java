@@ -24,8 +24,8 @@ public class TokenHelper {
 	public TokenHelper(){}
 	
 	public String generateToken(int idToSave) throws JoseException{
-		JwtClaims jwtClaims = this.generateJwtClaims( idToSave );
-		JsonWebSignature jsonWebSignature = this.generateJsonWebSignature( jwtClaims );
+		JwtClaims jwtClaims = generateJwtClaims( idToSave );
+		JsonWebSignature jsonWebSignature = generateJsonWebSignature( jwtClaims );
 		String serializedWebSignature = serializeJsonWebSignature( jsonWebSignature );
 		return serializedWebSignature;
 	}
@@ -39,7 +39,7 @@ public class TokenHelper {
 	}
 
 	private JsonWebSignature generateJsonWebSignature( JwtClaims jwtClaims ) throws JoseException{
-		RsaJsonWebKey jsonWebKey = this.generateJsonWebKey();
+		RsaJsonWebKey jsonWebKey = generateJsonWebKey();
 		JsonWebSignature jsonWebSignature = new JsonWebSignature();
 		jsonWebSignature.setPayload( jwtClaims.toJson() );
 		jsonWebSignature.setKey( jsonWebKey.getPrivateKey() );
@@ -59,12 +59,13 @@ public class TokenHelper {
 	}
 	
 	public int validateToken( String webSignature ) throws InvalidTokenException{
-		RsaJsonWebKey jsonWebKey = this.generateJsonWebKey();
-		JwtConsumerBuilder jwtConsumerBuilder = new JwtConsumerBuilder();
-		jwtConsumerBuilder.setRequireExpirationTime();
-		jwtConsumerBuilder.setExpectedIssuer( TOKEN_ISSUER );
-		jwtConsumerBuilder.setVerificationKey( jsonWebKey.getKey() );
-		JwtConsumer jwtConsumer = jwtConsumerBuilder.build();
+		RsaJsonWebKey jsonWebKey = generateJsonWebKey();
+
+		JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+			.setRequireExpirationTime()
+			.setExpectedIssuer( TOKEN_ISSUER )
+			.setVerificationKey( jsonWebKey.getKey() )
+			.build();
 		
 		try {
 			JwtClaims jwtConsumerClaims = jwtConsumer.processToClaims( webSignature );
