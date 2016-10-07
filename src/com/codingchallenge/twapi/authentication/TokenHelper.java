@@ -14,56 +14,62 @@ import org.springframework.stereotype.Component;
 
 import com.codingchallenge.twapi.exceptions.InvalidTokenException;
 
-/**
- * Class for token handling
- * 
- */
 @Component
 public class TokenHelper {
 	
-	private static final String KEY_ID = "key"; // Secret key for the token
-	private static final String ISSUER = "CodingChallengeApi"; // Token issuer
-	private static final float EXPIRATION_MINUTES = (60 * 24); // 1 day
+	private static final String TOKEN_KEY_ID = "key";
+	private static final String TOKEN_ISSUER = "CodingChallengeApi";
+	private static final float TOKEN_EXPIRATION_MINUTES = (60 * 24);
 	
-	private RsaJsonWebKey key;
-	private JwtClaims claims;
-	
-	public TokenHelper() throws JoseException{
-		key = RsaJwkGenerator.generateJwk(2048);
-		key.setKeyId(KEY_ID);
-	}
+	public TokenHelper(){}
 	
 	public String generateToken(int idToSave) throws JoseException{
-		claims = new JwtClaims();
-		
-		claims.setIssuer(ISSUER);
-		claims.setExpirationTimeMinutesInTheFuture(EXPIRATION_MINUTES);
-		claims.setSubject(""+idToSave); // Save the user id into the token
-		
-		JsonWebSignature jws = new JsonWebSignature();
-		
-		jws.setPayload(claims.toJson());
-		jws.setKey(key.getPrivateKey());
-		
-		jws.setKeyIdHeaderValue(key.getKeyId());
-		jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
-		
-		String token = jws.getCompactSerialization(); // Get the token string
-		return token;
+		JwtClaims jwtClaims = generateJwtClaims( idToSave );
+		JsonWebSignature jsonWebSignature = generateJsonWebSignature( jwtClaims );
+		String serializedWebSignature = serializeJsonWebSignature( jsonWebSignature );
+		return serializedWebSignature;
+	}
+
+	private JwtClaims generateJwtClaims( int idToSave ) throws JoseException{
+		JwtClaims jwtClaims = new JwtClaims();
+		jwtClaims.setIssuer( TOKEN_ISSUER );
+		jwtClaims.setExpirationTimeMinutesInTheFuture( TOKEN_EXPIRATION_MINUTES );
+		jwtClaims.setSubject( (string)idToSave );
+		return jwtClaims;
+	}
+
+	private JsonWebSignature generateJsonWebSignature( JwtClaims jwtClaims ) throws JoseException{
+		RsaJsonWebKey jsonWebKey = generateJsonWebKey();
+		JsonWebSignature jsonWebSignature = new JsonWebSignature();
+		jsonWebSignature.setPayload( jwtClaims.toJson() );
+		jsonWebSignature.setKey( jsonWebKey.getPrivateKey() );
+		jsonWebSignature.setKeyIdHeaderValue( jsonWebKey.getKeyId() );
+		jsonWebSignature.setAlgorithmHeaderValue( AlgorithmIdentifiers.RSA_USING_SHA256 );
+		return jsonWebSignature;
+	}
+
+	private RsaJsonWebKey generateJsonWebKey() throws JoseException{
+		RsaJsonWebKey jsonWebKey = RsaJwkGenerator.generateJwk(2048);
+		jsonWebKey.setKeyId( TOKEN_KEY_ID );
+		return jsonWebKey;
+	}
+
+	private String serializeJsonWebSignature( JsonWebSignature jsonWebSignature ){
+		return jsonWebSignature.getCompactSerialization();
 	}
 	
-	public int validateToken(String token) throws InvalidTokenException{
-		JwtConsumer consumer = new JwtConsumerBuilder()
-	            .setRequireExpirationTime()
-	            .setExpectedIssuer(ISSUER)
-	            .setVerificationKey(key.getKey())
-	            .build();
+	public int validateToken( String webSignature ) throws InvalidTokenException{
+		RsaJsonWebKey jsonWebKey = generateJsonWebKey();
+
+		JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+			.setRequireExpirationTime()
+			.setExpectedIssuer( TOKEN_ISSUER )
+			.setVerificationKey( jsonWebKey.getKey() )
+			.build();
 		
 		try {
-			claims = consumer.processToClaims(token);
-			int receivedId;
-			receivedId = Integer.parseInt(claims.getSubject());
-			
+			JwtClaims jwtConsumerClaims = jwtConsumer.processToClaims( webSignature );
+			int receivedId = Integer.parseInt( jwtConsumerClaims.getSubject() );
 			return receivedId;
 		} catch (NumberFormatException | MalformedClaimException | InvalidJwtException e) {
 			throw new InvalidTokenException();
